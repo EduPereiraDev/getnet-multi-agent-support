@@ -1,11 +1,14 @@
 """Router Agent: entry point that turns a message into an ordered execution plan.
 
-Offline mode uses transparent keyword heuristics (PT + EN). LLM mode (T-07/T-14) asks the
-model for a `RoutePlan` via structured outputs and falls back to these heuristics on error.
+Offline mode uses transparent keyword heuristics (PT + EN). LLM mode asks the model for a
+`RoutePlan` via structured outputs and falls back to these heuristics on any error.
 """
 
 import re
 
+from app.config import get_settings
+from app.llm.client import get_llm, load_prompt
+from app.observability import log_event
 from app.schemas import Route, RoutePlan, RouteStep
 
 HUMAN_RE = re.compile(
@@ -80,5 +83,16 @@ class RouterAgent:
     name = "router"
 
     def plan(self, masked_message: str) -> RoutePlan:
-        # TODO(T-07): LLM structured-output routing with heuristic fallback.
-        return heuristic_plan(masked_message)
+        heuristic = heuristic_plan(masked_message)
+        settings = get_settings()
+        # Safety net: an explicit human/sensitive request always escalates, whatever the LLM says.
+        if settings.resolved_mode == "llm" and heuristic.primary != Route.ESCALATION:
+            try:
+                plan = get_llm().structured(
+                    load_prompt("router"), masked_message, RoutePlan, model=settings.router_model
+                )
+                if isinstance(plan, RoutePlan) and plan.steps:
+                    return plan.model_copy(update={"rationale": f"llm: {plan.rationale}"})
+            except Exception as exc:  # noqa: BLE001 - any LLM failure degrades to heuristics
+                log_event("router.llm_fallback", error=repr(exc))
+        return heuristic.model_copy(update={"rationale": f"heuristic: {heuristic.rationale}"})
