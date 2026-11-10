@@ -1,0 +1,56 @@
+{
+  "cliente1988": {
+    "profile": {
+      "user_id": "cliente1988",
+      "business_name": "Padaria Pão Quente",
+      "document_type": "CNPJ",
+      "plan": "Receba em 2 dias úteis",
+      "settlement_account": "Get Conta",
+      "segment": "food",
+      "city": "Porto Alegre - RS",
+      "products": ["Get Smart", "Pix", "Link de Pagamento"],
+      "crediario_enabled": true,
+      "auto_anticipation": false
+    },
+    "terminals": [
+      {"serial": "GS-0098812", "model": "Get Smart", "status": "offline", "last_seen": "2026-11-09T21:14:00-03:00",
+       "connectivity": "wifi", "signal": "none", "battery_pct": 64, "firmware": "4.2.1"},
+      {"serial": "GC-0045120", "model": "Get Clássica", "status": "online", "last_seen": "2026-11-10T08:02:00-03:00",
+       "connectivity": "chip_algar", "signal": "3g", "battery_pct": 88, "firmware": "3.9.0"}
+    ],
+    "transactions": [
+      {"id": "TX-1001", "date": "2026-11-09", "amount": 54.90, "method": "debit", "brand": "Visa", "status": "approved"},
+      {"id": "TX-1002", "date": "2026-11-09", "amount": 210.00, "method": "credit", "installments": 3, "brand": "Mastercard", "status": "approved"},
+      {"id": "TX-1003", "date": "2026-11-09", "amount": 89.00, "method": "pix", "status": "approved"},
+      {"id": "TX-1004", "date": "2026-11-10", "amount": 132.50, "method": "credit", "installments": 1, "brand": "Elo", "status": "declined",
+       "decline_code": "51", "decline_reason": "Insufficient funds (issuer)"},
+      {"id": "TX-1005", "date": "2026-11-10", "amount": 132.50, "method": "credit", "installments": 1, "brand": "Elo", "status": "declined",
+       "decline_code": "DUP", "decline_reason": "Duplicate sale within 5 minutes auto-cancelled"}
+    ],
+    "settlements": [
+      {"sale_date": "2026-11-09", "method": "debit", "gross": 54.90, "net": 54.00, "expected_date": "2026-11-10", "status": "paid"},
+      {"sale_date": "2026-11-09", "method": "credit", "gross": 210.00, "net": 202.25, "expected_date": "2026-11-11", "status": "scheduled"},
+      {"sale_date": "2026-11-09", "method": "pix", "gross": 89.00, "net": 89.00, "expected_date": "2026-11-09", "status": "paid"}
+    ]
+  },
+  "cliente2024": {
+    "profile": {
+      "user_id": "cliente2024",
+      "business_name": "Studio Bela Pele",
+      "document_type": "CPF",
+      "plan": "Receba conforme suas vendas",
+      "settlement_account": "Banco externo",
+      "segment": "health_and_beauty",
+      "city": "São Paulo - SP",
+      "products": ["Get Mini"],
+      "crediario_enabled": false,
+      "auto_anticipation": true
+    },
+    "terminals": [
+      {"serial": "GM-0012001", "model": "Get Mini", "status": "online", "last_seen": "2026-11-10T09:30:00-03:00",
+       "connectivity": "bluetooth", "signal": "good", "battery_pct": 40, "firmware": "2.1.0"}
+    ],
+    "transactions": [],
+    "settlements": []
+  }
+}

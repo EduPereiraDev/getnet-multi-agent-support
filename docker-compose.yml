@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: .
+      args:
+        INGEST_ONLINE: ${INGEST_ONLINE:-0}
+    image: getnet-multi-agent-support:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      LLM_MODE: ${LLM_MODE:-auto}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: unless-stopped
