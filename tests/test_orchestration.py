@@ -101,15 +101,16 @@ def test_multi_step_composes_support_then_official_guidance(monkeypatch):
     res = _ask(S05)
     assert res.agents[:3] == ["router", "support", "knowledge"]
     assert "Official guidance:" in res.answer
-    assert res.answer.index("Official guidance:") > res.answer.index("merchant")
+    assert res.answer.index("Official guidance:") > res.answer.index("GS-0098812")
     assert res.sources and res.sources[0].url.startswith("https://")
 
 
-def test_placeholder_knowledge_is_skipped_in_composition():
+def test_empty_knowledge_is_skipped_in_composition(monkeypatch):
+    monkeypatch.setattr(KnowledgeAgent, "run", lambda self, ctx: AgentResult(agent="knowledge", answer=""))
     res = _ask(S05)
     assert res.agents[:3] == ["router", "support", "knowledge"]
     assert "Official guidance" not in res.answer
-    assert "pending implementation] merchant" in res.answer
+    assert "GS-0098812" in res.answer
 
 
 def test_llm_composer_used_and_falls_back(llm_mode, monkeypatch):
