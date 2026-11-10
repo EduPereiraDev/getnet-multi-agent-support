@@ -48,7 +48,9 @@ def compose_offline(results: list[AgentResult]) -> str:
     knowledge = [r.answer for r in results if r.agent == "knowledge" and has_content(r.answer)]
     parts = list(support)
     if knowledge:
-        parts.append("Official guidance:\n" + "\n\n".join(knowledge))
+        guidance = "\n\n".join(knowledge)
+        # The knowledge agent already titles follow-up guidance; only add a heading when it didn't.
+        parts.append(guidance if guidance.startswith("Official") else "Official guidance:\n" + guidance)
     return "\n\n".join(parts)
 
 
