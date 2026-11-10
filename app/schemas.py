@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000, examples=["How does antecipação work?"])
-    user_id: str = Field(..., min_length=1, max_length=64, examples=["cliente1988"])
+    user_id: str = Field(..., pattern=r"^[A-Za-z0-9_-]{1,64}$", examples=["cliente1988"])
 
 
 class Route(str, Enum):
@@ -27,7 +27,7 @@ class RouteStep(BaseModel):
 class RoutePlan(BaseModel):
     """Router output: an ordered list of agent steps plus a confidence score."""
 
-    steps: list[RouteStep]
+    steps: list[RouteStep] = Field(min_length=1, max_length=3)  # caps LLM fan-out (LLM10)
     confidence: float = Field(ge=0, le=1)
     rationale: str = ""
 
@@ -69,8 +69,7 @@ class AgentContext(BaseModel):
 
     trace_id: str
     user_id: str
-    message: str
-    masked_message: str
+    masked_message: str  # only the PII-masked text ever reaches agents (LGPD minimisation)
     instruction: str = ""
     previous: list[AgentResult] = Field(default_factory=list)
 

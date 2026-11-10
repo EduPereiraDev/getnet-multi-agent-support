@@ -18,7 +18,8 @@ messages=(
 
 for m in "${messages[@]}"; do
   echo "=== $m"
-  curl -s -X POST "$URL" -H 'Content-Type: application/json' \
+  curl -sf -X POST "$URL" -H 'Content-Type: application/json' \
     -d "$(python3 -c 'import json,sys; print(json.dumps({"message": sys.argv[1], "user_id": "cliente1988"}))' "$m")" \
-    | python3 -c 'import json,sys; b=json.load(sys.stdin); print(b["route"], b["agents"], "escalated=%s" % b["escalated"]); print(b["answer"][:400])'
+    | python3 -c 'import json,sys; b=json.load(sys.stdin); assert b["route"] and b["answer"], b; print(b["route"], b["agents"], "escalated=%s" % b["escalated"]); print(b["answer"][:400])'
 done
+echo "smoke: ${#messages[@]}/${#messages[@]} scenarios returned 200 with a route"

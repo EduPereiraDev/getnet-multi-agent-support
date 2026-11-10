@@ -19,7 +19,8 @@ an API key.
 > [design](specs/02-design.md) ·
 > [tasks](specs/03-tasks.md) ·
 > [testing & evaluation](specs/04-testing-and-evaluation.md) ·
-> [execution plan & coverage matrix](specs/05-execution-plan.md)
+> [execution plan & coverage matrix](specs/05-execution-plan.md) ·
+> [security & privacy (OWASP · LGPD)](specs/06-security-and-privacy.md)
 
 ---
 
@@ -28,7 +29,7 @@ an API key.
 ### Docker (recommended)
 
 ```bash
-cp .env.example .env            # optional: set ANTHROPIC_API_KEY to enable LLM mode
+./scripts/set_api_key.sh        # optional: stores ANTHROPIC_API_KEY in .env (hidden input) → LLM mode
 docker compose up --build       # API on http://localhost:8000
 ```
 
@@ -58,7 +59,9 @@ make run            # uvicorn on :8000
 | `ANTHROPIC_API_KEY` | — | Claude credential |
 | `LLM_MODEL` / `ROUTER_MODEL` | `claude-opus-5-5` / `claude-haiku-5-5` | Model for the agents / cheaper, faster routing model |
 | `LLM_TIMEOUT_S` | `30` | Per-call timeout (falls back to offline on errors) |
-| `INGEST_ONLINE` | `0` | `1` also crawls the live Getnet pages in `data/sources.yaml` at build time |
+| `INGEST_ONLINE` | `1` in Docker | Crawl the live Getnet pages in `data/sources.yaml` at build time (+ seed); `0` = seed only |
+| `RATE_LIMIT_PER_MINUTE` | `30` | Requests per client IP per minute on `/chat` (429 above) |
+| `EXPOSE_DOCS` | `true` | Set `false` in production to hide `/docs`, `/redoc`, `/openapi.json` |
 | `RAG_TOP_K`, `RAG_MIN_SCORE` | `4`, `0.08` | Retrieval parameters |
 | `ESCALATION_CONFIDENCE` | `0.45` | Below this confidence the request is handed to a human |
 
@@ -68,7 +71,7 @@ settlements) and `cliente2024`. Any other `user_id` → the system asks for a hu
 ## 2. Tests and evaluation
 
 ```bash
-make test           # 104 tests, fully offline (no key, no network: HTTP and LLM are faked)
+make test           # 122 tests, fully offline (no key, no network: HTTP and LLM are faked)
 make eval           # golden-set release gate
 python -m app.evaluation   # prints the metrics report
 ```
@@ -161,11 +164,13 @@ The `Agent` contract is transport-agnostic, so the same messages could move to a
   The global site doesn't describe Get Clássica, Get Smart, Pix, crediário, antecipação or the
   Payment Link; the brief asks to *"look for other sources"*
   ([context](specs/00-context-and-sources.md)).
-- **Ingestion** ([`app/rag/ingest.py`](app/rag/ingest.py)) loads a curated **seed corpus**
-  ([`data/seed/`](data/seed/)): official facts, bilingual PT/EN, each with its source URL. With
-  `INGEST_ONLINE=1` it also crawls the live pages (httpx + BeautifulSoup, nav/scripts removed). Text
-  is cut into chunks of ~800 characters with 150 of overlap, preferring paragraph and sentence
-  boundaries.
+- **Ingestion** ([`app/rag/ingest.py`](app/rag/ingest.py)) crawls the live pages listed in
+  `data/sources.yaml` at image build time (httpx + BeautifulSoup, nav/scripts removed: ~45 documents,
+  ~350 chunks). It always adds a curated **seed corpus** ([`data/seed/`](data/seed/)): official facts,
+  bilingual PT/EN, each with its source URL. The seed anchors the key answers and is the offline
+  fallback, because pages that fail to fetch are skipped. Text is cut into chunks of ~800 characters
+  with 150 of overlap, preferring paragraph and sentence boundaries. Evaluation stays at 16/16 on the
+  crawled index.
 - **Storage** ([`app/rag/store.py`](app/rag/store.py)): a TF-IDF index (word 1–2-grams with PT+EN
   stop words, plus char 3–5-grams), persisted in `data/index/` and built when the image is built.
 - **Retrieval**: cosine top-k with a minimum score, and at least one content word must be shared
@@ -201,14 +206,41 @@ The `Agent` contract is transport-agnostic, so the same messages could move to a
   - agent exceptions become a human handoff;
   - the evaluation suite is a release gate.
 - **Observability** ([`app/observability.py`](app/observability.py)):
-  - one JSON log line per span (`guardrail.input`, `router`, `agent.*`, `guardrail.output`);
+  - one JSON log line per span (`guardrail.input`, `router`, `agent.*`, `composer`, `guardrail.output`);
   - each line carries `trace_id`, latency, route, steps and flags, and the trace id is also returned
     as `X-Trace-Id`;
   - production dashboards and alerts are described in [specs/04](specs/04-testing-and-evaluation.md) §4:
     containment and escalation rates, guardrail blocks, tool error rate, p95 latency, cost per
     request, retrieval-miss rate.
 
-## 7. Design choices
+## 7. Security & privacy (OWASP · OWASP LLM · LGPD)
+
+Full mapping: [`specs/06-security-and-privacy.md`](specs/06-security-and-privacy.md).
+
+- **PII minimisation**:
+  - CPF/CNPJ, card numbers, e-mail and phone are masked before any LLM call or log line.
+  - Agents only ever see the masked text, and nothing is persisted.
+  - Output masking runs on the final answer.
+  - The public `tool_calls` list exposes tool name and status only.
+- **Least agency**:
+  - Tools are read-only (the only write is a mock ticket).
+  - `user_id` is bound server-side and validated (`^[A-Za-z0-9_-]{1,64}$`).
+  - In multi-step plans the knowledge LLM has no free-text web search, so merchant data from
+    earlier steps cannot leave in a query.
+- **Unbounded consumption**: messages are capped at 2,000 chars and plans at 3 steps; tool loops
+  stop after 5 iterations; LLM calls have a 30 s timeout with 1 retry; `/chat` has a per-IP rate limit.
+- **Hardening**:
+  - `nosniff`, `DENY` and `no-store` headers on every response.
+  - Generic errors only.
+  - The image is non-root, with no dev deps or tests.
+  - `.env` is git- and docker-ignored, and no secrets are in the history.
+- **Documented limitations**:
+  - No authentication. The brief's contract trusts `user_id`; production needs identity from a
+    verified token.
+  - LGPD art. 33 international transfer to the LLM provider requires a DPA or zero retention.
+    Offline mode sends nothing out.
+
+## 8. Design choices
 
 | Decision | Why |
 |---|---|
@@ -220,10 +252,10 @@ The `Agent` contract is transport-agnostic, so the same messages could move to a
 | Human Escalation as a 4th agent | Human in the loop by design, following Getnet's public AI principle that a human must always understand the AI's work |
 
 **Known limitations**: no authentication (the `user_id` is trusted, as in the brief); support data
-is mocked; the default image indexes the curated seed (set `INGEST_ONLINE=1` to crawl the live
-pages); the LLM mode was validated with fakes in tests and needs a key for live runs.
+is mocked; regex-based PII and injection detection is best-effort; the LLM code paths are
+unit-tested with a scripted fake SDK and need a key for live runs (see specs/06 §5).
 
-## 8. Project layout
+## 9. Project layout
 
 ```
 app/

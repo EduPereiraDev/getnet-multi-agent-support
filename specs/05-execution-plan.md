@@ -110,8 +110,8 @@ WEB_TOOLS: dict[str, tuple[Callable, dict]]   # same shape as SUPPORT_TOOLS
 | 9 | Dockerfile (+ compose) runs with standard commands (brief §3) | S0, S6 | `docker compose up --build`, smoke script |
 | 10 | Testing strategy + integration testing approach for orchestration (brief §4) | S0, S6 | `specs/04`, pytest suite, eval runner |
 | 11 | Suitable language/libs for API, agents, RAG (brief §5) | S0 | Python, FastAPI, Anthropic SDK, scikit-learn; rationale in `specs/02` §9 |
-| 12 | Clean, modular code; high-quality prompts; functional RAG ingesting the URLs (brief "looking for") | S1, S2, S6 | module per concern; `app/prompts/*.md`; `test_rag.py`; review |
-| 13 | Evaluation, observability, reliability, guardrails, monitoring (brief "looking for") | S0, S5, S6 | JSON spans, trace id, guardrails, eval gates, monitoring plan (`specs/04`) |
+| 12 | Clean, modular code; high-quality prompts; functional RAG ingesting the URLs (brief "looking for") | S1, S2, S6 | module per concern; `app/prompts/*.md`; Docker build crawls `data/sources.yaml` (45 docs) + seed; eval 16/16 on the crawled index |
+| 13 | Evaluation, observability, reliability, guardrails, monitoring (brief "looking for") | S0, S5, S6 | JSON spans, trace id, guardrails, eval gates, monitoring plan (`specs/04`), security & LGPD (`specs/06`) |
 | 14 | README: build/configure/run/tests (brief) | S6 | README Quick start / Configuration / Testing |
 | 15 | README: architecture, design choices, workflow, RAG pipeline, LLM tools (brief) | S6 | README + `specs/02` |
 | 16 | Bonus: 4th agent (human escalation) | S0, S5 | `EscalationAgent`, handoff ticket |
@@ -122,7 +122,7 @@ WEB_TOOLS: dict[str, tuple[Callable, dict]]   # same shape as SUPPORT_TOOLS
 | 21 | GitHub repo link (brief + e-mail) | S0 | public repo `EduPereiraDev/getnet-multi-agent-support` |
 | 22 | Video ≤ 15 min, unlisted YouTube: reasoning, architecture, orchestration (brief + e-mail) | S7 | link in submission e-mail |
 | 23 | Send repo + video links to stefany.morais@getnet.net within 1 week (e-mail) | S7 | e-mail sent by Eduardo |
-| 24 | Multiple attempts allowed; submit the best complete one (e-mail) | S7 | tag `submission` on the chosen commit |
+| 24 | Multiple attempts allowed; submit the best complete one (e-mail) | S7 | tags `attempt-1` (in-box) / `attempt-2` (post-review hardening); the chosen one is sent |
 
 ## 7. Risks and mitigations
 

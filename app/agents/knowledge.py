@@ -287,10 +287,13 @@ class KnowledgeAgent:
             + (f"Earlier agent outputs (do not repeat them, add official guidance):\n{previous}\n\n" if previous else "")
             + f"Focus for this step: {ctx.instruction or 'answer the question with citations'}"
         )
-        tools = [{"name": n, **spec} for n, (_fn, spec) in web_tools.WEB_TOOLS.items()]
+        # Merchant data from earlier steps must never leave through a free-text web query (LLM01/LLM02,
+        # LGPD minimisation): multi-step plans only get the fixed-parameter tools.
+        allowed = {n for n in web_tools.WEB_TOOLS if not (ctx.previous and n == "web_search")}
+        tools = [{"name": n, **spec} for n, (_fn, spec) in web_tools.WEB_TOOLS.items() if n in allowed]
 
         def execute(name: str, args: dict[str, Any]) -> dict[str, Any]:
-            fn = getattr(web_tools, name, None) if name in web_tools.WEB_TOOLS else None
+            fn = getattr(web_tools, name, None) if name in allowed else None
             if fn is None:
                 return {"ok": False, "error": f"unknown tool {name}"}
             return fn(**args)

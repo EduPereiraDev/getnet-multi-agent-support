@@ -36,7 +36,7 @@ so the same contracts can move to a queue/event bus (e.g. SQS/Kafka) without tou
 | **Router** | Classify intent, produce plan (1..n steps), confidence, rationale | — | Structured output (`RoutePlan` schema). Offline: keyword/regex heuristics. |
 | **Knowledge** | Getnet product Q&A grounded in RAG; general questions via web | `search_knowledge_base`, `web_search`, `get_weather`, `get_exchange_rate` | Tool-use loop; answers must cite sources. Offline: extractive answer from top chunks / direct tool output. |
 | **Customer Support** | Resolve merchant-specific issues with the merchant's data | `get_customer_profile`, `get_settlement_schedule`, `get_terminal_status`, `get_recent_transactions`, `create_support_ticket` | Tool-use loop. Offline: intent → tool mapping + templated answer. |
-| **Human Escalation** (bonus) | Structured handoff to a human operator | `create_handoff_ticket` | Summarises case for the operator. Offline: template. |
+| **Human Escalation** (bonus) | Structured handoff to a human operator | `create_handoff_ticket` | Template handoff (protocol + channels); LLM case summary for operators is a planned extension. |
 
 ### Multi-step plans
 
@@ -75,9 +75,10 @@ Also: `GET /health` (liveness + index loaded + mode), `GET /docs` (OpenAPI).
 
 ## 4. RAG pipeline
 
-1. **Ingestion** (`app/rag/ingest.py`, run at build time or `python -m app.rag.ingest`): fetch URLs from
-   `data/sources.yaml` (global site + BR product pages + BR FAQ), strip nav/scripts with
-   BeautifulSoup, normalise whitespace, keep `title` + `url`.
+1. **Ingestion** (`app/rag/ingest.py`, run at image build time or `python -m app.rag.ingest`): always load the
+   curated seed corpus, and with `INGEST_ONLINE=1` (Docker default) crawl the URLs in `data/sources.yaml`
+   (global site + BR product pages + BR FAQ; ~45 docs / ~350 chunks), strip nav/scripts with BeautifulSoup,
+   normalise whitespace, keep `title` + `url`. Failed pages are skipped, so the seed is the offline fallback.
 2. **Chunking**: ~800-char windows with ~150 overlap, split on headings/paragraphs first.
 3. **Storage**: local persistent index (`data/index/`) — chunks JSON + vector matrix. Default
    retriever is **TF-IDF (char+word n-grams) + cosine**, offline and deterministic, good for PT/EN

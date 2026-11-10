@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     ingest_online: bool = False
 
     escalation_confidence: float = 0.45
-    max_message_chars: int = 2000
+    rate_limit_per_minute: int = 30
+    expose_docs: bool = True
     log_level: str = "INFO"
 
     @property

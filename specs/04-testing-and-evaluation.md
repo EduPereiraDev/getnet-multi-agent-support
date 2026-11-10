@@ -7,9 +7,9 @@
 | Unit | Guardrails regexes, PII masking, tools over mock data, chunker, retriever, router heuristics | `pytest tests/test_*.py` | ✅ |
 | Contract | Pydantic schemas, API status codes, payload validation (422), response shape | FastAPI `TestClient` | ✅ |
 | Integration (orchestration) | Full request through guardrails → router → agent(s) → response with **offline LLM** and **mocked HTTP** for web tools | `TestClient` + `respx`/monkeypatch | ✅ |
-| Integration (LLM) | Same flows against the real model, marked `@pytest.mark.llm`, skipped without credentials | `pytest -m llm` | ❌ (needs key) |
+| Integration (LLM) | Real-model runs of the same flows (planned; today validated manually with `LLM_MODE=llm` + `scripts/smoke.sh`, while the LLM code paths are unit-tested with a scripted fake SDK) | manual | ❌ (needs key) |
 | Evaluation | Golden dataset: expected route, agents, tools, must-contain facts, must-not-contain, escalation | `pytest tests/evals` + report | ✅ offline / LLM |
-| E2E / smoke | Container up, curl the 10 scenarios, assert 200 + route | `make smoke` | ✅ |
+| E2E / smoke | Container up, curl the 10 scenarios; fails on non-200 or missing route/answer | `make smoke` | ✅ |
 
 ## 2. Integration testing the orchestration (how we approach it)
 
@@ -19,7 +19,7 @@
 2. **Assert on the trace, not just the text.** Each response exposes `route`, `agents`,
    `tool_calls`, `sources`, `escalated` — tests assert the *path* (e.g. scenario 5 must call
    `get_terminal_status` and then retrieve FAQ troubleshooting chunks).
-3. **Failure injection.** Tool raises / times out → answer degrades gracefully and escalates;
+3. **Failure injection.** Agent raises → 200 + human handoff (tested); tool errors return `ok: false` and lower confidence;
    LLM error → offline fallback; empty retrieval → web search or "don't know" + escalation.
 4. **Scripted LLM fakes** to test the tool-use loop: a fake returns `tool_use` → we execute the tool
    → fake returns final text; verifies loop limits and tool result plumbing.
@@ -44,7 +44,7 @@ LLM mode adds an **LLM-as-judge** pass (faithfulness to retrieved context, helpf
 
 ## 4. Observability & production monitoring
 
-- **Logs**: JSON per span (`request`, `guardrail`, `router`, `agent`, `tool`, `llm`), with `trace_id`.
+- **Logs**: JSON per span (`guardrail.input`, `router`, `agent.<name>`, `composer`, `guardrail.output`, `rate_limited`), with `trace_id`; PII kinds only, never message text.
 - **Traces**: span model compatible with OpenTelemetry (exporter pluggable: Langfuse / Datadog / Jaeger).
 - **Dashboards**: volume by route, containment rate, escalation rate, guardrail blocks by reason,
   tool error rate, p50/p95 latency per agent, tokens & cost per request, user feedback.

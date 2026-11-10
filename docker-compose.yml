@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        INGEST_ONLINE: ${INGEST_ONLINE:-0}
+        INGEST_ONLINE: ${INGEST_ONLINE:-1}
     image: getnet-multi-agent-support:latest
     ports:
       - "8000:8000"

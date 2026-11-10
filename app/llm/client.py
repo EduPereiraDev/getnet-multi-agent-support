@@ -71,7 +71,7 @@ class AnthropicLLM:
         self.client = client or anthropic.Anthropic(
             api_key=self.settings.anthropic_api_key or None,
             timeout=self.settings.llm_timeout_s,
-            max_retries=2,
+            max_retries=1,
         )
 
     def structured(

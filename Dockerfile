@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS base
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -6,18 +6,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Runtime dependencies only: tests and dev tools stay out of the image (see .dockerignore).
 COPY pyproject.toml ./
 COPY app ./app
-RUN pip install --upgrade pip && pip install ".[dev]"
+RUN pip install .
 
 COPY data ./data
-COPY tests ./tests
 
-# Build the RAG index at image build time from the offline seed corpus.
-# Set INGEST_ONLINE=1 to also crawl the live Getnet pages listed in data/sources.yaml.
-ARG INGEST_ONLINE=0
+# Build the RAG index at image build time: curated seed corpus + live crawl of data/sources.yaml.
+# Pages that fail to fetch are skipped, so a build without network still indexes the seed (INGEST_ONLINE=0 forces seed-only).
+ARG INGEST_ONLINE=1
 ENV INGEST_ONLINE=${INGEST_ONLINE}
-RUN python -m app.rag.ingest || echo "ingest skipped (index will be built on startup)"
+RUN python -m app.rag.ingest
 
 RUN useradd --create-home appuser && chown -R appuser /app
 USER appuser

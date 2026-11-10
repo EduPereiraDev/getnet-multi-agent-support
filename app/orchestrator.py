@@ -80,7 +80,14 @@ class Orchestrator:
                 route=route,
                 agents=agents,
                 sources=[src for r in results for src in r.sources],
-                tool_calls=[tc for r in results for tc in r.tool_calls],
+                # Raw exception text stays in the span logs; clients only see a generic error marker.
+                # Public trace = tool name + status only. Model-written args and raw exception text may carry
+                # PII or internals (LLM02/LGPD), so they stay out of the response.
+                tool_calls=[
+                    tc.model_copy(update={"args": {}, "error": "tool_error" if tc.error else None})
+                    for r in results
+                    for tc in r.tool_calls
+                ],
                 confidence=round(confidence, 2),
                 escalated=escalated,
                 handoff_ticket=ticket,
@@ -104,7 +111,6 @@ class Orchestrator:
             ctx = AgentContext(
                 trace_id=trace_id,
                 user_id=req.user_id,
-                message=req.message,
                 masked_message=check.masked_message,
                 instruction=step.instruction,
                 previous=results.copy(),
@@ -112,7 +118,7 @@ class Orchestrator:
             results.append(self._run_agent(step.agent, ctx))
 
         def escalate(trigger: str) -> None:
-            ctx = AgentContext(trace_id=trace_id, user_id=req.user_id, message=req.message,
+            ctx = AgentContext(trace_id=trace_id, user_id=req.user_id,
                                masked_message=check.masked_message, previous=results.copy())
             results.append(self._run_agent(Route.ESCALATION, ctx, trigger=trigger))
 

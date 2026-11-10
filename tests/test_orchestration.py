@@ -145,7 +145,7 @@ def test_agent_exception_escalates_instead_of_500(client, monkeypatch):
     assert body["handoff_ticket"].startswith("HUM-")
     assert body["agents"][-1] == "escalation"
     failed = [tc for tc in body["tool_calls"] if tc["tool"] == "agent.support"]
-    assert failed and failed[0]["ok"] is False and "tool backend down" in failed[0]["error"]
+    assert failed and failed[0]["ok"] is False and failed[0]["error"] == "tool_error"  # raw text stays in logs only
 
 
 # --- Output guardrails --------------------------------------------------------
@@ -203,3 +203,13 @@ def test_output_masking_keeps_ids(text):
 def test_output_masking_card_and_formatted_cpf():
     out = check_output("Card 4111 1111 1111 1111, CPF 123.456.789-09, call 4002-4000", [])
     assert "4111" not in out.answer and "123.456.789-09" not in out.answer and "4002-4000" in out.answer
+
+
+def test_router_plan_is_capped_at_three_steps():
+    with pytest.raises(ValueError):
+        RoutePlan(steps=[RouteStep(agent=Route.KNOWLEDGE)] * 4, confidence=0.9)
+
+
+def test_public_tool_calls_have_no_args():
+    res = _ask(S05)
+    assert res.tool_calls and all(tc.args == {} for tc in res.tool_calls)
