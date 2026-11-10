@@ -79,7 +79,7 @@ class Orchestrator:
                 answer=answer,
                 route=route,
                 agents=agents,
-                sources=[src for r in results for src in r.sources],
+                sources=list({src.url: src for r in results for src in r.sources}.values()),
                 # Raw exception text stays in the span logs; clients only see a generic error marker.
                 # Public trace = tool name + status only. Model-written args and raw exception text may carry
                 # PII or internals (LLM02/LGPD), so they stay out of the response.
