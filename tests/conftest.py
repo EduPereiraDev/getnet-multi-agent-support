@@ -18,3 +18,24 @@ SCENARIOS = yaml.safe_load((Path(__file__).parent / "evals" / "scenarios.yaml").
 @pytest.fixture(scope="session")
 def client() -> TestClient:
     return TestClient(app)
+
+
+class _BlockedAnthropic:
+    """Stands in for the real SDK client: tests that switch to LLM mode must inject fakes."""
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @property
+    def messages(self):
+        raise RuntimeError("real Anthropic API calls are blocked in tests")
+
+
+@pytest.fixture(autouse=True)
+def _no_real_llm(monkeypatch):
+    import app.llm.client as llm_client
+
+    monkeypatch.setattr(llm_client.anthropic, "Anthropic", _BlockedAnthropic)
+    llm_client.get_llm.cache_clear()
+    yield
+    llm_client.get_llm.cache_clear()
