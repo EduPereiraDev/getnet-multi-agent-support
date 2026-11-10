@@ -1,7 +1,8 @@
 # 03 — Tasks
 
 Status: ✅ done · 🟡 in progress · ⬜ todo. Each task lists the requirements it satisfies and how it
-is verified.
+is verified. Sprint grouping and parallelism: [`05-execution-plan.md`](05-execution-plan.md)
+(S1 = T-08 · S2 = T-14/T-15 · S3 = T-09/T-11 · S4 = T-10 · S5 = T-07/T-12/T-13 · S6 = T-16..T-19).
 
 | ID | Task | Reqs | Verify | Status |
 |---|---|---|---|---|

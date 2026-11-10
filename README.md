@@ -15,6 +15,7 @@ Built with **Spec-Driven Development** — start with [`specs/`](specs/):
 | [02 — Design](specs/02-design.md) | Architecture, agents, API contract, RAG pipeline, LLM layer, guardrails, decisions |
 | [03 — Tasks](specs/03-tasks.md) | Task list with traceability to requirements and status |
 | [04 — Testing & Evaluation](specs/04-testing-and-evaluation.md) | Test pyramid, orchestration integration testing, eval metrics, monitoring |
+| [05 — Execution Plan](specs/05-execution-plan.md) | Phases & parallel sprints, file ownership, frozen interfaces, coverage matrix (brief + e-mail) |
 
 > **Status:** first commit = specs + runnable skeleton (API, contracts, guardrails, support tools,
 > router heuristics, human escalation, tests). Knowledge/RAG, LLM client and full agent logic are
