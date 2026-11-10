@@ -132,6 +132,9 @@ class AnthropicLLM:
             raise LLMUnavailable(f"Anthropic API error: {exc}") from exc
         if response.stop_reason == "refusal":
             raise LLMUnavailable("model refused the request")
+        if response.stop_reason not in ("end_turn", "stop_sequence"):
+            # Budget exhausted mid tool-use, max_tokens or pause_turn: never return a half-finished answer.
+            raise LLMUnavailable(f"incomplete response (stop_reason={response.stop_reason})")
         return _text(response), calls
 
     def _create(self, model: str | None, system: str, messages: list[dict], tools: list[dict]) -> Any:

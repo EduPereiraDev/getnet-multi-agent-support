@@ -25,7 +25,7 @@ def _tools(result) -> list[str]:
 def test_s03_settlement_schedule():
     res = _run("When will the money from yesterday's sales be deposited?")
     assert "get_settlement_schedule" in _tools(res)
-    assert "R$ 345.25" in res.answer and "2026-11-11" in res.answer
+    assert "R$ 345,25" in res.answer and "2026-11-11" in res.answer
     assert res.data["settlements"]["total_net"] == 345.25
     assert res.confidence == 0.8 and not res.needs_human
 

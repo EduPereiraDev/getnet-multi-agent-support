@@ -143,11 +143,10 @@ def test_run_tools_respects_budget(monkeypatch):
     ]
     llm, fake = _llm(looping)
 
-    text, calls = llm.run_tools("sys", "hi", [], lambda name, args: {"ok": True})
+    with pytest.raises(LLMUnavailable, match="incomplete"):
+        llm.run_tools("sys", "hi", [], lambda name, args: {"ok": True})
 
-    assert len(fake.calls) == 3  # initial request + 2 tool iterations
-    assert len(calls) == 2
-    assert text == "step 2"
+    assert len(fake.calls) == 3  # initial request + 2 tool iterations, then give up (no partial answer)
 
 
 def test_run_tools_refusal():

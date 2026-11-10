@@ -33,7 +33,7 @@ def detect_intent(text: str) -> str | None:
 
 
 def _brl(value: float) -> str:
-    return f"R$ {value:,.2f}"
+    return "R$ " + f"{value:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
 
 
 class SupportAgent:
@@ -73,13 +73,15 @@ class SupportAgent:
             tools,
             lambda name, args: run_support_tool(name, ctx.user_id, args),
         )
-        ok = any(c.ok for c in calls)
+        if not any(c.ok for c in calls):
+            # REQ-07: support answers must be grounded on the merchant's data, never on model guesses.
+            raise RuntimeError("LLM answered without a successful tool call")
         return AgentResult(
             agent=self.name,
             answer=answer,
             tool_calls=calls,
-            confidence=0.85 if ok else 0.5,
-            needs_human=any(not c.ok for c in calls) and not ok,
+            confidence=0.85,
+            data={"intent": "llm", "tools": [c.tool for c in calls if c.ok]},
         )
 
     # Offline path -------------------------------------------------------------------------

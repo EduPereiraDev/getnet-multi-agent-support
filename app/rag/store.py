@@ -12,7 +12,7 @@ from typing import Protocol
 
 import numpy as np
 from scipy.sparse import hstack
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 
 from app.config import get_settings
 
@@ -32,10 +32,17 @@ class Retriever(Protocol):
     def search(self, query: str, k: int = 4) -> list[Chunk]: ...
 
 
+# The corpus is Portuguese with English key terms, so filter function words in both languages.
+PT_STOP_WORDS = """a ao aos as ate com como da das de do dos e ela ele em entre esta este eu faco foi ha isso ja
+la mais mas me meu minha muito na nas nao no nos o os ou para pela pelo por pode posso qual quando que
+quem se sem ser seu sua tem um uma uns umas voce voces hoje amanha esta estou""".split()
+STOP_WORDS = sorted(ENGLISH_STOP_WORDS | set(PT_STOP_WORDS))
+
+
 def _vectorizers() -> tuple[TfidfVectorizer, TfidfVectorizer]:
     common = {"strip_accents": "unicode", "lowercase": True, "sublinear_tf": True}
     return (
-        TfidfVectorizer(analyzer="word", ngram_range=(1, 2), stop_words="english", **common),
+        TfidfVectorizer(analyzer="word", ngram_range=(1, 2), stop_words=STOP_WORDS, **common),
         TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), **common),
     )
 
@@ -72,8 +79,13 @@ class TfidfRetriever:
     def search(self, query: str, k: int = 4) -> list[Chunk]:
         if not query.strip():
             return []
-        q = self._stack(self.word.transform([query]), self.char.transform([query]))
+        q_word = self.word.transform([query])
+        q = self._stack(q_word, self.char.transform([query]))
         scores = (self.matrix @ q.T).toarray().ravel()
+        # Char n-grams alone inflate scores for off-topic text: require at least one shared content word.
+        n_word = len(self.word.vocabulary_)
+        word_overlap = (self.matrix[:, :n_word] @ q_word.T).toarray().ravel()
+        scores[word_overlap <= 0] = 0.0
         order = sorted(range(len(scores)), key=lambda i: (-scores[i], i))
         return [
             Chunk(

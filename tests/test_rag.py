@@ -119,3 +119,8 @@ def test_fetch_url_strips_chrome_and_skips_failures():
     assert "Receba via Pix" in doc.text
     assert not any(noise in doc.text for noise in ("menu", "topo", "track", "rodapé"))
     assert fetch_url("https://example.test/down") is None
+
+
+@pytest.mark.parametrize("query", ["Como faço para pedir uma pizza?", "Como está o tempo em Porto Alegre hoje?"])
+def test_portuguese_off_topic_is_filtered(retriever, query):
+    assert retriever.search(query) == []
