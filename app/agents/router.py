@@ -19,17 +19,17 @@ HUMAN_RE = re.compile(
 
 # Problems tied to *this* merchant's data → Customer Support.
 SUPPORT_RE = re.compile(
-    r"\b(my (card )?machine|my terminal|minha maquininha|my account|minha conta|yesterday'?s? sales|vendas de ontem|deposit(ed)?|deposita|"
-    r"won'?t connect|n[aã]o conecta|offline|declin(e|ed)|recusad|negad|erro|error|ticket|chamado|"
-    r"when will .* (money|paid)|quando (vou )?receb)\b",
+    r"\b(my (card )?machine|my terminal|minha maquininha|my account|minha conta|yesterday'?s? sales|vendas de ontem|"
+    r"deposit\w*|won'?t connect|n[aã]o conecta\w*|offline|declin\w*|recusad\w*|negad\w*|erro|error|ticket|"
+    r"chamado|when will .* (money|paid)|quando (vou )?receb\w*|meu dinheiro|n[aã]o caiu|minhas vendas)\b",
     re.IGNORECASE,
 )
 
 # Getnet products/services → Knowledge (RAG).
 GETNET_RE = re.compile(
     r"\b(getnet|get ?cl[aá]ssica|get ?smart|get ?mini|get ?tap|get ?conta|maquininha|card machine|pix|"
-    r"payment link|link de pagamento|credi[aá]rio|antecipa[cç][aã]o|receivables|installments?|parcel|"
-    r"taxa|fee|tef|split|e-?commerce|checkout|whatsapp|bank account|conta banc[aá]ria|empr[eé]stimo)\b",
+    r"payment link|link de pagamento|credi[aá]rio|antecipa[cç][aã]o|receivables|installments?|parcel\w*|"
+    r"taxas?|fees?|tef|split|e-?commerce|checkout|whatsapp|bank account|conta banc[aá]ria|empr[eé]stimo)\b",
     re.IGNORECASE,
 )
 

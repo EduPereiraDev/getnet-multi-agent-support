@@ -119,7 +119,7 @@ class Orchestrator:
         # Human handoff: explicit escalation, an agent asking for help, or low confidence.
         confidence = min(plan.confidence, *(r.confidence for r in results))
         needs_human = any(r.needs_human for r in results) or confidence < self.settings.escalation_confidence
-        if needs_human and plan.primary != Route.ESCALATION:
+        if needs_human and not any(r.agent == Route.ESCALATION.value for r in results):
             escalate("handoff")
 
         answer = ""

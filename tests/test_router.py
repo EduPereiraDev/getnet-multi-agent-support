@@ -14,3 +14,20 @@ def test_heuristic_routing_matches_golden_set(scenario):
 
 def test_out_of_scope():
     assert heuristic_plan("Write me a poem about dragons.").primary.value == "out_of_scope"
+
+
+@pytest.mark.parametrize(
+    "message,expected",
+    [
+        ("Quando vou receber o dinheiro das vendas de ontem?", ["support"]),
+        ("Meu dinheiro não caiu", ["support"]),
+        ("Minha venda foi recusada", ["support", "knowledge"]),
+        ("Transação negada na maquininha", ["support", "knowledge"]),
+        ("Minha maquininha não conecta na internet", ["support", "knowledge"]),
+        ("Quais as taxas da Getnet?", ["knowledge"]),
+        ("Quantas parcelas no crediário?", ["knowledge"]),
+        ("Qual a cotação do euro hoje?", ["knowledge"]),
+    ],
+)
+def test_portuguese_variants(message, expected):
+    assert [st.agent.value for st in heuristic_plan(message).steps] == expected

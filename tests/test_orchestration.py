@@ -190,3 +190,16 @@ def test_ungrounded_penalty_triggers_escalation(monkeypatch):
     assert UNGROUNDED_DISCLAIMER in res.answer
     assert res.confidence < get_settings().escalation_confidence
     assert res.escalated and res.agents[-1] == "escalation"
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Protocol 20261110123456789 opened", "Transaction id 12345678901234", "Ticket HD-12345678901"],
+)
+def test_output_masking_keeps_ids(text):
+    assert check_output(text, []).answer == text
+
+
+def test_output_masking_card_and_formatted_cpf():
+    out = check_output("Card 4111 1111 1111 1111, CPF 123.456.789-09, call 4002-4000", [])
+    assert "4111" not in out.answer and "123.456.789-09" not in out.answer and "4002-4000" in out.answer

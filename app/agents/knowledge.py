@@ -192,7 +192,7 @@ class KnowledgeAgent:
             return AgentResult(
                 agent=self.name,
                 answer="Which city would you like the weather forecast for?",
-                confidence=0.3,
+                confidence=0.5,
             )
         day_offset = 1 if TOMORROW_RE.search(text) else 0
         args = {"city": city, "day_offset": day_offset}
@@ -203,7 +203,7 @@ class KnowledgeAgent:
                 agent=self.name,
                 answer=f"I couldn't get the weather forecast for {city} right now. Please try again later.",
                 tool_calls=[call],
-                confidence=0.3,
+                confidence=0.5,
             )
         place = ", ".join(p for p in (res["city"], res.get("country", "")) if p)
         answer = (
@@ -233,7 +233,7 @@ class KnowledgeAgent:
                 agent=self.name,
                 answer=f"I couldn't get the {base}/BRL exchange rate right now. Please try again later.",
                 tool_calls=[call],
-                confidence=0.3,
+                confidence=0.5,
             )
         answer = (
             f"1 {base} = R$ {float(res['rate']):.4f} ({res['date']}), ECB reference rate.\n"

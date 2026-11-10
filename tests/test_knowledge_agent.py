@@ -150,10 +150,12 @@ def test_web_search_miss_is_honest(web_calls, monkeypatch):
     assert res.confidence == 0.3
 
 
-def test_weather_tool_failure_lowers_confidence(web_calls, monkeypatch):
+def test_weather_tool_outage_is_honest_without_handoff(web_calls, monkeypatch):
+    # A weather API outage is not a Getnet issue: answer "try later" and stay above the handoff threshold.
     monkeypatch.setattr(web_tools, "get_weather", lambda *a, **k: {"ok": False, "error": "timeout"})
     res = run("What's the weather forecast in Porto Alegre tomorrow?")
-    assert res.confidence == 0.3
+    assert "try again later" in res.answer
+    assert res.confidence == 0.5
     assert res.needs_human is False
     assert res.tool_calls[0].ok is False and res.tool_calls[0].error == "timeout"
 
